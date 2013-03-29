@@ -6,16 +6,15 @@ import socket
 # This class takes care of the connection to the IRC server.
 # Basic error handling
 class engine():
-  def __init__(self, config, ident, hq, pilot):
+  def __init__(self, config, hq, pilot):
     self.config = config  # Configuration class for the connection.
-    self.ident = ident
     self.hq = hq
     self.pilot = pilot
 
     # Shortcut variables for server and port even though they are already in config.
     self.server = config.server
     self.port = config.port
-    self.nick = ident.nick
+    self.nick = config.ident.nick
 
     self.socket = socket.socket()
 
