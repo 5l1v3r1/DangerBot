@@ -1,7 +1,8 @@
 import os
 import sys
 
-class config():
+
+class Config():
   def __init__(self, server, port, ssl, retry, ident, channels):
     self.server = server
     self.port = port
@@ -10,4 +11,11 @@ class config():
     self.ident = ident
     self.channels = channels
 
+
+class Ident():
+  def __init__(self, nick, password, realname, quit):
+    self.nick = nick
+    self.password = password
+    self.realname = realname
+    self.quit = quit
 

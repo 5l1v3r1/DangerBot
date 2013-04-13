@@ -1,3 +1,5 @@
+output.txt
+.pass
 *.py[cod]
 
 # C extensions
