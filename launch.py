@@ -11,9 +11,9 @@ def main():
   f = open(".pass", "r")
   password = f.readline()
   ident = Ident("DangerBot", password, "DangerBot IRC Bot", "Goooose!!!") # nick, pass, real, quit
-  channels = ["#bots"]
+  channels = ["#coffeesh0p", "#bots"]
 
-  config = Config("irc.hackthissite.org", 6667, False, 1, ident, channels)  # server, port, ssl?, reconnects, ident, channels
+  config = Config("funstuff.tk", 8888, True, 1, ident, channels, srv_pass="jaksod", bnc=True)  # server, port, ssl?, reconnects, ident, channels, server pass
   hq = HQ("output.txt", True)  # logfile, verbose?
 
   pilot = Pilot(config, hq)

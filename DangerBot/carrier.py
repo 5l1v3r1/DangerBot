@@ -3,13 +3,15 @@ import sys
 
 
 class Config():
-  def __init__(self, server, port, ssl, retry, ident, channels):
+  def __init__(self, server, port, ssl, retry, ident, channels, srv_pass=None, bnc=False):
     self.server = server
     self.port = port
     self.ssl = ssl
     self.retry = retry
     self.ident = ident
     self.channels = channels
+    self.srv_pass = srv_pass
+    self.bnc = bnc
 
 
 class Ident():

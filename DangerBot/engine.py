@@ -44,19 +44,28 @@ class Engine():
     self.hq.log("[+] Starting Engine")
     self.connect()
     
-    while(1):
-      a = self.socket.recv(512)
-      a.strip("\r")
-      b = a.split("\r\n")
-      for msg in b:
-        self.hq.log("IN: " + msg)
-      if a.count("Found"):
-        break
+    if not self.config.srv_pass:
+      while(1):
+        a = self.socket.recv(512)
+        a.strip("\r")
+        b = a.split("\n")
+        for msg in b:
+          self.hq.log("IN: " + msg)
+        if a.count("Found"):
+          break
 
     self.hq.log("[+] Sending auth info.")
+    self.hq.log('NICK ' + self.nick + '\r\n')
     self.socket.send('NICK ' + self.nick + '\r\n')
+
+    self.hq.log('USER ' + self.nick + ' ' + self.server + ' ' +
+                'NAME :' + self.config.ident.realname + '\r\n')
     self.socket.send('USER ' + self.nick + ' ' + self.server + ' ' +
                      'NAME :' + self.config.ident.realname + '\r\n')
+    
+    if self.config.srv_pass:
+      self.hq.log("[+] Sending server password.")
+      self.socket.send('PASS ' + self.nick + ':' + self.config.srv_pass + '\r\n')
 
     buf = ""  # Used for message pump.              
     while 1:
@@ -74,8 +83,10 @@ class Engine():
         if msg[0].count("PING"):
           self.hq.log("[*] PONG :" + msg[1])
           self.socket.send('PONG :' + msg[1] + '\r\n')
+          self.pilot.getState()
         else:
           self.hq.log("IN: " + line)
+          
           response = self.pilot.parse(line)
           if response and response != "":
             try:

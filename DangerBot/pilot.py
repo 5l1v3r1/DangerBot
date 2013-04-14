@@ -2,6 +2,8 @@ import os
 import sys
 
 import md5
+import urllib2
+import re
 
 
 class Pilot():
@@ -16,6 +18,9 @@ class Pilot():
     response = ""
     msg = line.split(':')
     
+    if self.state == 0 and self.config.bnc:
+      self.state = 2
+
     if self.state == 0: # Just connected.
       if len(msg) > 2 and msg[1].count("376"): # End of MOTD
         if self.ident.password: # If we need to identify.
@@ -37,29 +42,66 @@ class Pilot():
       self.state = 3
 
     elif self.state == 3:
-      if msg[1].count("366"): # End of /names list.
+      if msg[1].count("366") and msg[1].count("#bots"): # End of /names list.
         self.state = 4
 
     elif self.state == 4:
-      for chan in self.config.channels:
-        response = "PRIVMSG " + chan + " :Highway to the DANGER ZONE!\r\n"
+      # for chan in self.config.channels:
+      response = "PRIVMSG #bots :Highway to the DANGER ZONE!\r\n"
       self.state = 5
 
     elif self.state == 5:
-      if self.perm8_state:
-        response = self.perm8(msg)
+      if len(msg) > 2 and msg[1].count("366"):
+        self.state = 6
 
-      if len(msg) > 2 and msg[2].count("!eject"):
-        response = "QUIT :" + self.ident.quit + "\r\n"
+    elif self.state == 6:
+      if len(msg) > 2:
+        self.hq.log(msg[1])
+        m = re.search(" #(.+) ", msg[1])
+        chan = m.group(0)
+
+        if msg[2].count("!btc"):
+          response = "PRIVMSG" + chan + ":" + self.getBTC() + "\r\n"
+
+      # if self.perm8_state:
+        # response = self.perm8(msg)
+
+      # if len(msg) > 2 and msg[2].count("!eject"):
+        # response = "QUIT :" + self.ident.quit + "\r\n"
         # Exit script here.
 
-      elif len(msg) > 2 and msg[2].count("!perm8") and not msg[2].count("!perm8-attack"):
-        response = "NOTICE moo :!perm8\r\n"
-        self.perm8_state = 1
-
+      # elif len(msg) > 2 and msg[2].count("!perm8") and not msg[2].count("!perm8-attack"):
+        # response = "NOTICE moo :!perm8\r\n"
+        # self.perm8_state = 1
 
     return response
 
+
+  def getBTC(self):
+    response = ""
+    mtgox = urllib2.urlopen("https://mtgox.com/")
+    while 1:
+      line = mtgox.readline()
+      if line.count("Last price:"):
+        #self.hq.log(line)
+        m = re.search("<span>(.+)</span>", line)
+        response += "Last: " + m.group(0).replace("<span>","").replace("</span>","") + ", "
+      if line.count("High:"):
+        m = re.search("<span>(.+)</span>", line)
+        response += "High: " + m.group(0).replace("<span>", "").replace("</span>","") + ", "
+      if line.count("Low:"):
+        m = re.search("<span>(.+)</span>", line)
+        response += "Low: " + m.group(0).replace("<span>","").replace("</span>","") + ". Retrieved from MT.Gox"
+        break
+    return response
+
+
+
+  def getState(self):
+    self.hq.log("Self.state: " + self.state + 
+                "\nSelf.perm8_state: " + self.perm8_state)
+  
+  
   def perm8(self, msg):
     response = ""
 
