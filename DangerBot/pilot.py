@@ -57,11 +57,20 @@ class Pilot():
     elif self.state == 6:
       if len(msg) > 2:
         self.hq.log(msg[1])
-        m = re.search(" #(.+) ", msg[1])
-        chan = m.group(0)
+        m = re.search("(\w+) (#.+) ", msg[1])
+        if m:
+          sender = m.group(1)
+          chan = m.group(2)  
+          if not chan:
+            recip = sender
+          else:
+            recip = chan
 
         if msg[2].count("!btc"):
-          response = "PRIVMSG" + chan + ":" + self.getBTC() + "\r\n"
+          response = "PRIVMSG " + recip + " :" + self.getBTC() + "\r\n"
+
+        if msg[2].count("!md5"):
+          response = "PRIVMSG " + recip + " :" + self.md5hash(msg) + "\r\n"
 
       # if self.perm8_state:
         # response = self.perm8(msg)
@@ -85,21 +94,33 @@ class Pilot():
       if line.count("Last price:"):
         #self.hq.log(line)
         m = re.search("<span>(.+)</span>", line)
-        response += "Last: " + m.group(0).replace("<span>","").replace("</span>","") + ", "
+        response += "Last: " + m.group(1) + ", "
       if line.count("High:"):
         m = re.search("<span>(.+)</span>", line)
-        response += "High: " + m.group(0).replace("<span>", "").replace("</span>","") + ", "
+        response += "High: " + m.group(1) + ", "
       if line.count("Low:"):
         m = re.search("<span>(.+)</span>", line)
-        response += "Low: " + m.group(0).replace("<span>","").replace("</span>","") + ". Retrieved from MT.Gox"
+        response += "Low: " + m.group(1) + ", "
+      if line.count("Weighted Avg:"):
+        m = re.search("<span>(.+)</span>", line)
+        response += "Weighted Avg: " + m.group(1) + ". Retrieved from MT.Gox"
         break
+    return response
+
+  def md5hash(self, msg):
+    m = re.search("!md5 (.+)", msg[2])
+    if m:
+      hash = md5.new(m.group(1).strip("\r"))
+      response = hash.hexdigest()
+    else:
+      response = "Input invalid."
     return response
 
 
 
   def getState(self):
-    self.hq.log("Self.state: " + self.state + 
-                "\nSelf.perm8_state: " + self.perm8_state)
+    self.hq.log("Self.state: " + str(self.state) + 
+                "\nSelf.perm8_state: " + str(self.perm8_state))
   
   
   def perm8(self, msg):
