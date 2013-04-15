@@ -85,8 +85,6 @@ class Pilot():
         if msg[2].count("!insult"):
           response = "PRIVMSG " + recip + " :"
           m = re.search("!insult (.+)$", msg[2])
-          if m.group(1).count(self.ident.nick):
-            response += "Go fuck yourself."
           if m:
             response += m.group(1) + ", " + self.getInsult() + "\r\n"
           else:
