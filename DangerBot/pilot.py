@@ -85,15 +85,16 @@ class Pilot():
         if msg[2].count("!insult"):
           response = "PRIVMSG " + recip + " :"
           m = re.search("!insult (.+)$", msg[2])
+          if m.group(1).count(self.ident.nick):
+            response += "Go fuck yourself."
           if m:
             response += m.group(1) + ", " + self.getInsult() + "\r\n"
           else:
             response += self.getInsult() + "\r\n"
           self.stats.count("!insult")
 
-        if msg[2].count(self.ident.nick):
-          huh_message = ""
-          response = "PRIVMSG " + recip + " :" + huh_message + "\r\n"
+        if msg[2].count("!perm2"):
+          response = "PRIVMSG " + recip + " :" + self.perm2() + "\r\n"
 
       # if self.perm8_state:
         # response = self.perm8(msg)
@@ -181,3 +182,7 @@ class Pilot():
         response += "KICK #takeoverz moo :SUCK MY DICK\r\n"
 
     return response
+
+
+  def perm2(self):
+
