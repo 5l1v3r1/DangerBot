@@ -91,6 +91,10 @@ class Pilot():
             response += self.getInsult() + "\r\n"
           self.stats.count("!insult")
 
+        if msg[2].count(self.ident.nick):
+          huh_message = ""
+          response = "PRIVMSG " + recip + " :" + huh_message + "\r\n"
+
       # if self.perm8_state:
         # response = self.perm8(msg)
 

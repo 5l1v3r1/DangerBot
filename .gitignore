@@ -2,6 +2,7 @@ output.txt
 .pass
 *.py[cod]
 launch.py
+dump.rdb
 *.db
 # C extensions
 *.so
