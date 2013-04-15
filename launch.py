@@ -10,10 +10,10 @@ from DangerBot.engine import Engine
 def main():
   f = open(".pass", "r")
   password = f.readline()
-  ident = Ident("DangerBot", password, "DangerBot IRC Bot", "Goooose!!!") # nick, pass, real, quit
-  channels = ["#coffeesh0p", "#bots"]
+  ident = Ident("DangerBeta", None, "DangerBot IRC Bot", "Goooose!!!") # nick, pass, real, quit
+  channels = ["#bots"]
 
-  config = Config("funstuff.tk", 8888, True, 1, ident, channels, srv_pass="jaksod", bnc=True)  # server, port, ssl?, reconnects, ident, channels, server pass
+  config = Config("irc.hackthissite.org", 7000, True, 1, ident, channels)  # server, port, ssl?, reconnects, ident, channels, srv_pass, bnc?
   hq = HQ("output.txt", True)  # logfile, verbose?
 
   pilot = Pilot(config, hq)

@@ -1,9 +1,12 @@
 import os
 import sys
 
+from stats import Stats
+
 import md5
 import urllib2
 import re
+import json
 
 
 class Pilot():
@@ -13,17 +16,15 @@ class Pilot():
     self.hq = hq
     self.state = 0
     self.perm8_state = 0
-    
+    self.stats = Stats(config, hq)
+
   def parse(self, line):
     response = ""
     msg = line.split(':')
     
-    if self.state == 0 and self.config.bnc:
-      self.state = 2
-
     if self.state == 0: # Just connected.
       if len(msg) > 2 and msg[1].count("376"): # End of MOTD
-        if self.ident.password: # If we need to identify.
+        if self.ident.password and not self.config.bnc: # If we need to identify.
           self.state = 1
         else:
           self.state = 2
@@ -36,25 +37,13 @@ class Pilot():
         self.state = 2
 
     elif self.state == 2:
-      for chan in self.config.channels:
-        response += "JOIN " + chan + "\r\n"
-        self.hq.log("[+] Joining " + chan)
+      if not self.config.bnc:
+        for chan in self.config.channels:
+          response += "JOIN " + chan + "\r\n"
+          self.hq.log("[+] Joining " + chan)
       self.state = 3
-
+      
     elif self.state == 3:
-      if msg[1].count("366") and msg[1].count("#bots"): # End of /names list.
-        self.state = 4
-
-    elif self.state == 4:
-      # for chan in self.config.channels:
-      response = "PRIVMSG #bots :Highway to the DANGER ZONE!\r\n"
-      self.state = 5
-
-    elif self.state == 5:
-      if len(msg) > 2 and msg[1].count("366"):
-        self.state = 6
-
-    elif self.state == 6:
       if len(msg) > 2:
         self.hq.log(msg[1])
         m = re.search("^(\w+)!.+ (.+) $", msg[1])
@@ -66,11 +55,24 @@ class Pilot():
           else:
             recip = chan
 
+        else:
+          m = re.search("^.+ (.+) $", msg[1])
+          chan = m.group(1)
+
+        if msg[1].count("366"):
+          self.stats.join(chan)
+
         if msg[2].count("!btc"):
           response = "PRIVMSG " + recip + " :" + self.getBTC() + "\r\n"
 
         if msg[2].count("!md5"):
           response = "PRIVMSG " + recip + " :" + self.md5hash(msg) + "\r\n"
+
+        if msg[2].count("!time"):
+          response = "PRIVMSG " + recip + " :http://i.imgur.com/CfNS0uY.gif\r\n"
+
+        if msg[2].count("!stats"):
+          response = "PRIVMSG " + recip + " :" + self.stats.getStats() + "\r\n"
 
       # if self.perm8_state:
         # response = self.perm8(msg)
@@ -88,24 +90,17 @@ class Pilot():
 
   def getBTC(self):
     response = ""
-    mtgox = urllib2.urlopen("https://mtgox.com/")
-    while 1:
-      line = mtgox.readline()
-      if line.count("Last price:"):
-        #self.hq.log(line)
-        m = re.search("<span>(.+)</span>", line)
-        response += "Last: " + m.group(1) + ", "
-      if line.count("High:"):
-        m = re.search("<span>(.+)</span>", line)
-        response += "High: " + m.group(1) + ", "
-      if line.count("Low:"):
-        m = re.search("<span>(.+)</span>", line)
-        response += "Low: " + m.group(1) + ", "
-      if line.count("Weighted Avg:"):
-        m = re.search("<span>(.+)</span>", line)
-        response += "Weighted Avg: " + m.group(1) + ". Retrieved from MT.Gox"
-        break
+    mtgox = urllib2.urlopen("http://data.mtgox.com/api/2/BTCUSD/money/ticker")
+
+    data = json.load(mtgox)
+
+    response += "Last: $" + str(data['data']['last']['value']) + ", "
+    response += "High: $" + str(data['data']['high']['value']) + ", "
+    response += "Low: $" + str(data['data']['low']['value']) + ", "
+    response += "Weighted Avg: $" + str(data['data']['avg']['value']) + ". Retrieved from MT.Gox"
+   
     return response
+
 
   def md5hash(self, msg):
     m = re.search("!md5 (.+)", msg[2])
@@ -152,6 +147,5 @@ class Pilot():
     elif self.perm8_state == 4:
       if len(msg) > 2 and msg[1].count("366"):
         response += "KICK #takeoverz moo :SUCK MY DICK\r\n"
-
 
     return response
