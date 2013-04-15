@@ -184,5 +184,5 @@ class Pilot():
     return response
 
 
-  def perm2(self):
+  # def perm2(self):
 
