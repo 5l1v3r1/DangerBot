@@ -57,11 +57,11 @@ class Pilot():
     elif self.state == 6:
       if len(msg) > 2:
         self.hq.log(msg[1])
-        m = re.search("(\w+) (#.+) ", msg[1])
+        m = re.search("^(\w+)!.+ (.+) $", msg[1])
         if m:
           sender = m.group(1)
-          chan = m.group(2)  
-          if not chan:
+          chan = m.group(2)
+          if chan.count(self.ident.nick):
             recip = sender
           else:
             recip = chan
