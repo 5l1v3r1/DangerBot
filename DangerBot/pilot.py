@@ -65,15 +65,22 @@ class Pilot():
 
         if msg[2].count("!btc"):
           response = "PRIVMSG " + recip + " :" + self.getBTC() + "\r\n"
+          self.stats.count("!btc")
 
         if msg[2].count("!md5"):
           response = "PRIVMSG " + recip + " :" + self.md5hash(msg) + "\r\n"
+          self.stats.count("!md5")
 
         if msg[2].count("!time"):
           response = "PRIVMSG " + recip + " :http://i.imgur.com/CfNS0uY.gif\r\n"
+          self.stats.count("!time")
 
         if msg[2].count("!stats"):
-          response = "PRIVMSG " + recip + " :" + self.stats.getStats() + "\r\n"
+          response = ""
+          stats = self.stats.getStats()
+          for stat in stats:
+            response += "PRIVMSG " + recip + " :" + stat + "\r\n"
+          self.stats.count("!stats")
 
         if msg[2].count("!insult"):
           response = "PRIVMSG " + recip + " :"
@@ -82,6 +89,7 @@ class Pilot():
             response += m.group(1) + ", " + self.getInsult() + "\r\n"
           else:
             response += self.getInsult() + "\r\n"
+          self.stats.count("!insult")
 
       # if self.perm8_state:
         # response = self.perm8(msg)
