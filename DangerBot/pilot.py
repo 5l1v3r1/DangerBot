@@ -45,6 +45,7 @@ class Pilot():
       
     elif self.state == 3:
       if len(msg) > 2:
+        msg[2] = msg[2].strip("\r")
         self.hq.log(msg[1])
         m = re.search("^(\w+)!.+ (.+) $", msg[1])
         if m:
@@ -73,6 +74,14 @@ class Pilot():
 
         if msg[2].count("!stats"):
           response = "PRIVMSG " + recip + " :" + self.stats.getStats() + "\r\n"
+
+        if msg[2].count("!insult"):
+          response = "PRIVMSG " + recip + " :"
+          m = re.search("!insult (.+)$", msg[2])
+          if m:
+            response += m.group(1) + ", " + self.getInsult() + "\r\n"
+          else:
+            response += self.getInsult() + "\r\n"
 
       # if self.perm8_state:
         # response = self.perm8(msg)
@@ -118,6 +127,17 @@ class Pilot():
                 "\nSelf.perm8_state: " + str(self.perm8_state))
   
   
+  def getInsult(self):
+    insult = urllib2.urlopen("http://www.randominsults.net/")
+    while 1:
+      line = insult.readline()
+      if line.count("<font face=\"Verdana\" size=\"4\"><strong><i>"):
+        m = re.search("<font face=\"Verdana\" size=\"4\"><strong><i>(.+)</i>", line)
+        response = m.group(1)
+        break
+    return response
+
+
   def perm8(self, msg):
     response = ""
 
