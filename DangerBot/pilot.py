@@ -2,6 +2,7 @@ import os
 import sys
 
 from stats import Stats
+from utils import Utilities
 
 import md5
 import urllib2
@@ -17,11 +18,12 @@ class Pilot():
     self.state = 0
     self.perm8_state = 0
     self.stats = Stats(config, hq)
+    self.utils = Utilities()
+
 
   def parse(self, line):
     response = ""
     msg = line.split(':')
-    
     if self.state == 0: # Just connected.
       if len(msg) > 2 and msg[1].count("376"): # End of MOTD
         if self.ident.password and not self.config.bnc: # If we need to identify.
@@ -42,7 +44,7 @@ class Pilot():
           response += "JOIN " + chan + "\r\n"
           self.hq.log("[+] Joining " + chan)
       self.state = 3
-      
+
     elif self.state == 3:
       if len(msg) > 2:
         msg[2] = msg[2].strip("\r")
@@ -55,132 +57,49 @@ class Pilot():
             recip = sender
           else:
             recip = chan
+          response = self.process(sender, recip, msg)
 
         else:
           m = re.search("^.+ (.+) $", msg[1])
           chan = m.group(1)
-
         if msg[1].count("366"):
           self.stats.join(chan)
-
-        if msg[2].count("!btc"):
-          response = "PRIVMSG " + recip + " :" + self.getBTC() + "\r\n"
-          self.stats.count("!btc")
-
-        if msg[2].count("!md5"):
-          response = "PRIVMSG " + recip + " :" + self.md5hash(msg) + "\r\n"
-          self.stats.count("!md5")
-
-        if msg[2].count("!time"):
-          response = "PRIVMSG " + recip + " :http://i.imgur.com/CfNS0uY.gif\r\n"
-          self.stats.count("!time")
-
-        if msg[2].count("!stats"):
-          response = ""
-          stats = self.stats.getStats()
-          for stat in stats:
-            response += "PRIVMSG " + recip + " :" + stat + "\r\n"
-          self.stats.count("!stats")
-
-        if msg[2].count("!insult"):
-          response = "PRIVMSG " + recip + " :"
-          m = re.search("!insult (.+)$", msg[2])
-          if m:
-            response += m.group(1) + ", " + self.getInsult() + "\r\n"
-          else:
-            response += self.getInsult() + "\r\n"
-          self.stats.count("!insult")
-
-        if msg[2].count("!perm2"):
-          response = "PRIVMSG " + recip + " :" + self.perm2() + "\r\n"
-
-      # if self.perm8_state:
-        # response = self.perm8(msg)
-
-      # if len(msg) > 2 and msg[2].count("!eject"):
-        # response = "QUIT :" + self.ident.quit + "\r\n"
-        # Exit script here.
-
-      # elif len(msg) > 2 and msg[2].count("!perm8") and not msg[2].count("!perm8-attack"):
-        # response = "NOTICE moo :!perm8\r\n"
-        # self.perm8_state = 1
-
+        elif msg[1].count("KICK"):
+          self.stats.leave(chan)
+          response = "JOIN " + chan + "\r\n"
+          
     return response
 
 
-  def getBTC(self):
+  def process(self, sender, recip, msg):
+    message = "".join(msg[2:])
+    print message
+    responses = []
     response = ""
-    mtgox = urllib2.urlopen("http://data.mtgox.com/api/2/BTCUSD/money/ticker")
+    if message.count(self.ident.nick):
+      for util in self.utils.functions():
+        if message.count(util):
+          print "[*] It's a utility"
+          responses = self.utils.execute(message)
+          response = self.privMsg(recip, responses)
+          self.stats.count(util)
+          break
+      if message.count("stats"):
+        print "[*] Stat!"
+        stats = self.stats.getStats()
+        self.stats.count("stats")
+        response = self.privMsg(recip, stats)
 
-    data = json.load(mtgox)
-
-    response += "Last: $" + str(data['data']['last']['value']) + ", "
-    response += "High: $" + str(data['data']['high']['value']) + ", "
-    response += "Low: $" + str(data['data']['low']['value']) + ", "
-    response += "Weighted Avg: $" + str(data['data']['avg']['value']) + ". Retrieved from MT.Gox"
-   
+    print response
     return response
-
-
-  def md5hash(self, msg):
-    m = re.search("!md5 (.+)", msg[2])
-    if m:
-      hash = md5.new(m.group(1).strip("\r"))
-      response = hash.hexdigest()
-    else:
-      response = "Input invalid."
-    return response
-
 
 
   def getState(self):
-    self.hq.log("Self.state: " + str(self.state) + 
-                "\nSelf.perm8_state: " + str(self.perm8_state))
+    self.hq.log("Self.state: " + str(self.state))
+    return
   
-  
-  def getInsult(self):
-    insult = urllib2.urlopen("http://www.randominsults.net/")
-    while 1:
-      line = insult.readline()
-      if line.count("<font face=\"Verdana\" size=\"4\"><strong><i>"):
-        m = re.search("<font face=\"Verdana\" size=\"4\"><strong><i>(.+)</i>", line)
-        response = m.group(1)
-        break
-    return response
-
-
-  def perm8(self, msg):
+  def privMsg(self, recip, msgs):
     response = ""
-
-    if self.perm8_state == 1:
-      if len(msg) > 2 and msg[2].count("!md5"):
-        perm8 = msg[2].split(" ")
-        perm8.pop(0)
-        string = " ".join(perm8)
-        string = string.replace("\r", "")
-        string = string.replace("\n", "")
-        self.hq.log(string)
-        hash = md5.new(string)
-        perm8_result = hash.hexdigest()
-        response = "NOTICE moo :!perm8-result " + perm8_result + "\r\n"
-        self.perm8_state = 2
-
-    elif self.perm8_state == 2:
-      if len(msg) > 2 and msg[2].count("VERSION"):
-        response = "NOTICE moo :\001VERSION DangerBot:1.0:MiG-28\001\r\n"
-        self.perm8_state = 3
-    
-    elif self.perm8_state == 3:
-      if len(msg) > 2 and msg[2].count("!perm8-attack"):
-        response = "JOIN #takeoverz\r\n"
-        self.perm8_state = 4
-
-    elif self.perm8_state == 4:
-      if len(msg) > 2 and msg[1].count("366"):
-        response += "KICK #takeoverz moo :SUCK MY DICK\r\n"
-
+    for msg in msgs:
+      response += "PRIVMSG " + recip + " :" + msg + "\r\n"
     return response
-
-
-  # def perm2(self):
-

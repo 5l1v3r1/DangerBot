@@ -21,7 +21,7 @@ class Stats():
     for chan in self.config.channels:
       if self.channels[chan]:
         response[0] += chan + ", "
-    response[0].strip(', ')
+    response[0] = response[0].strip(', ')
     
     response.append("Command stats: ")
     for cmd in self.db.keys("command:*"):
