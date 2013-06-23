@@ -30,7 +30,7 @@ class Utilities():
     elif msg.count("insult"):
       m = re.search("insult (.+)$", msg)
       if m:
-        response.append(m.group(1) + ", " + self.getInsult())
+        response.append(m.group(1).strip("\r\n") + ", " + self.getInsult())
       else:
         response.append(self.getInsult())
 
