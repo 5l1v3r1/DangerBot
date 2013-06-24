@@ -9,7 +9,7 @@ class HQ():
     self.verbose = verbose
 
   def log(self, msg, exception=None):
-    if msg.count("[+]") or msg.count("[-]") or msg.count("[*]") or self.verbose:
+    if msg.count("[+]") or msg.count("[-]") or msg.count("[*]") or msg.count("[~]") or self.verbose:
       print msg
     if exception:
       self.logfile.write(time.asctime(time.gmtime()) + " " + msg + " error({0}): {1}".format(exception.errno, exception.strerror) + "\n")

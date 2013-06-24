@@ -91,6 +91,8 @@ class Engine():
           if response and response != "":
             try:
               self.socket.send(response)
+              if response.count("QUIT"):
+                exit()
               self.hq.log("OUT: " + response)
             except Exception, e:
               self.hq.log("Error sending to socket: " + response, e)

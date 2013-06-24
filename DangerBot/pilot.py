@@ -49,15 +49,18 @@ class Pilot():
       if len(msg) > 2:
         msg[2] = msg[2].strip("\r")
         self.hq.log(msg[1])
-        m = re.search("^(\w+)!.+ (.+) $", msg[1])
+        m = re.search("^:(\w+)!(.+) (\w+) (.+) :(.+)$", line)
         if m:
-          sender = m.group(1)
-          chan = m.group(2)
+          nick = m.group(1)
+          host = m.group(2)
+          msgtyp = m.group(3)
+          chan = m.group(4)
+          message = m.group(5)
           if chan.count(self.ident.nick):
-            recip = sender
+            recip = nick
           else:
             recip = chan
-          response = self.process(sender, recip, msg)
+          response = self.process(nick, host, msgtyp, recip, message)
 
         else:
           m = re.search("^.+ (.+) $", msg[1])
@@ -71,9 +74,9 @@ class Pilot():
     return response
 
 
-  def process(self, sender, recip, msg):
-    message = "".join(msg[2:])
-    print message
+  def process(self, nick, host, msgtype, recip, message):
+    
+    self.hq.log("[~] " + message)
     responses = []
     response = ""
     if message.count(self.ident.nick):
@@ -89,6 +92,8 @@ class Pilot():
         stats = self.stats.getStats()
         self.stats.count("stats")
         response = self.privMsg(recip, stats)
+      elif message.count("goose"):
+        response = "QUIT :" + self.ident.quit + "\r\n"
 
     print response
     return response
